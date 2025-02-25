@@ -57,21 +57,21 @@ app.use('/fileRoute', fileRouteHandler);
 // console.log(app._router.stack); // array that stores all the routes as an object. 
 
 // ----------------------Scenario 01---------------------------------------------------
-const {router: routeHandler} = require('./middlewares')
-app.use('/mw', routeHandler); 
+const { router: routeHandler } = require('./middlewares')
+app.use('/mw', routeHandler);
 // ------------------------------------------------------------------------------------
 
 
 // ----------------------------Scenario 02------------------------------------------------
-app.use('/api', (req, res, next)=>{
+app.use('/api', (req, res, next) => {
     console.log("Route Handler 1");
-    next(); 
+    next();
     console.log("After next again Route Handler 1")
 })
 
-app.use('/api', (req, res, next)=>{
-    console.log("Route Handler 2"); 
-    res.send('completing req-res cycle from Route Handler 2'); 
+app.use('/api', (req, res, next) => {
+    console.log("Route Handler 2");
+    res.send('completing req-res cycle from Route Handler 2');
     // next(); 
 })
 
@@ -96,18 +96,20 @@ app.use('/api/123', (req, res) => {
 
 // -------------------------------------Scenario 03-------------------------------------
 
-// case 01 --> if res.send() is present after next(); 
+// case 01 --> if res.send() is present after next() and no next routing handler exists; 
 app.use('/url', (req, res, next) => {
-    console.log("Route Handler"); 
-    next(); 
+    console.log("Route Handler");
+    next();
     console.log("After next: Route Handler");
-    res.send("Req-res cycle completes but will throw an error"); 
+    res.send("Req-res cycle completes but will throw an error");
 })
+// from this we'll get a status 200 OK response. but due to next() express expects another routing
+// handler which is not present in this case. Hence, throws an error and app will get crashed. 
 
 // case 02 --> no res.send() is present but next() is present in routing handler
-app.use('/url1', (req, res, next)=> {
-    console.log("Route Handler"); 
-    next(); 
+app.use('/url1', (req, res, next) => {
+    console.log("Route Handler");
+    next();
     console.log("After next: Req will not hangs indefinitely due to next()");
 })
 
@@ -118,7 +120,105 @@ app.use('/url2', (req, res) => {
 
 // ---------------------------------------------------------------------------------------
 
+// ----------------------Scenario 04 - (no res.send() but multiple handlers)-----------------
+app.use('/url3',
+    (req, res, next) => {
+        console.log("Handler 1");
+        next();
+    },
+    (req, res, next) => {
+        console.log("Handler 2");
+        next()
+    },
+    (req, res, next) => {
+        console.log("Handler 3")
+        // next();
+    })
+
+// multiple handlers and consider 2 cases -> in last handler  -> next() is present and not present. 
+
+// if next() -> present -> last handler then due to this next() will get "cannot get /url3" error. 
+// cuz if next() is present then somehow express is expecting another handler or next matching route 
+// but it is not the case. Hence, "cannot get /url3" error will be received. 
+
+// if next() -> present❌❌ then req will hangs indefinitely. 
+// -----------------------------------------------------------------------------------------------
+
+// --------------------------------Scneario 05--------------------------------------------------
+// if res.send() is present after next() and next routing handler exists
+app.use('/url4',
+    (req, res, next) => {
+        console.log("Handler 1");
+        next();
+        console.log("H1: After next()")
+        res.send("Sent from H1!!!")
+    },
+    (req, res) => {
+        console.log("Handler 2")
+    }
+)
+
+// Here we're calling res.send() after next() but here when next() is called, another handler exists
+// that's why it is showing no error. 
 // ---------------------------------------------------------------------------------------------
+
+// -----------------Scenario 06---------------------------------------------------------------
+
+app.use('/url5', 
+    (req, res, next) => {
+        console.log("Handler 1");
+        next();
+        console.log("H1: After next()")
+        res.send("Sent from H1!!!")
+    }, 
+    (req, res, next) => {
+        console.log("Handler 2"); 
+        next(); 
+    }
+)
+
+// basically we're definitely sending response from handler 1 after next() but we're also calling
+// next() from handler 2. 
+// now due to this next() in Handler 2, express will comes out from the 2nd handler's scope. 
+// express is trying to find a next matching route or next routing handler. 
+// both are not present so express will comes back to 2nd handler and try to execute code after next()
+// nothing is present so it'll go back to 1st handler and execute code after next().
+// saw that res has been sent from Handler 1. 
+// but due to the next() present in 2nd handler and also no next routing handler exists. 
+// But express still expects next handler or next matching route which is not present in this case. 
+// Hence, even after returning a response to POSTMAN it'll throw an error which will crash the server. 
+// ------------------------------------------------------------------------------------------
+
+
+// ----------------------------------Scenario 07------------------------------------------
+app.use('/url6', (req, res, next) => {
+    res.send("Response Sent before next!!!"); 
+    console.log("Handler: After res.send() before next()")
+    next(); 
+    console.log("Handler: After res.send() and after next()")
+})
+// ----------------------------------------------------------------------------------------
+
+// -----------------------Scenario 08-------------------------------------------------
+app.use('/url7', 
+    (req, res, next) => {
+        console.log('Handler 1'); 
+        next(); 
+        console.log('After Next: Handler 1')
+    },
+    (req, res, next) => {
+        console.log('Handler 1'); 
+        next(); 
+        console.log('After Next: Handler 1')
+        res.send('Response sent by 2nd Handler'); 
+    },
+    (req, res, next) => {
+        console.log('Handler 3'); 
+        next(); 
+        console.log('After next: Handler 3')
+    }
+)   // res sent but crashed the server due to cannot remove headers wala error
+// -----------------------------------------------------------------------------------
 
 app.get('/', (req, res) => res.send('Home route created using HTTP method'))
 

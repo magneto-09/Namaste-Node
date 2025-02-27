@@ -57,7 +57,7 @@ app.use('/fileRoute', fileRouteHandler);
 // console.log(app._router.stack); // array that stores all the routes as an object. 
 
 // ----------------------Scenario 01---------------------------------------------------
-const { router: routeHandler } = require('./middlewares')
+const { router: routeHandler } = require('./middleware')
 app.use('/mw', routeHandler);
 // ------------------------------------------------------------------------------------
 
@@ -218,7 +218,18 @@ app.use('/url7',
         console.log('After next: Handler 3')
     }
 )   // res sent but crashed the server due to cannot remove headers wala error
+// as next() was called from last handler and also res.send() is called after next() in 2nd handler.
 // -----------------------------------------------------------------------------------
+
+//--------------------------------------Scenario 09---------------------------------------
+// creating authMiddleware file as well as admin file for route handling related to admin API. 
+const {admin: adminAuthMiddlware} = require('./middlewares/authMiddleware')
+app.use('/admin', adminAuthMiddlware)
+
+const {router: adminRouter} = require('./routes/adminRoute')
+app.use('/admin', adminRouter); 
+
+// ----------------------------------------------------------------------------------------
 
 app.get('/', (req, res) => res.send('Home route created using HTTP method'))
 

@@ -164,16 +164,16 @@ app.use('/url4',
 
 // -----------------Scenario 06---------------------------------------------------------------
 
-app.use('/url5', 
+app.use('/url5',
     (req, res, next) => {
         console.log("Handler 1");
         next();
         console.log("H1: After next()")
         res.send("Sent from H1!!!")
-    }, 
+    },
     (req, res, next) => {
-        console.log("Handler 2"); 
-        next(); 
+        console.log("Handler 2");
+        next();
     }
 )
 
@@ -192,29 +192,29 @@ app.use('/url5',
 
 // ----------------------------------Scenario 07------------------------------------------
 app.use('/url6', (req, res, next) => {
-    res.send("Response Sent before next!!!"); 
+    res.send("Response Sent before next!!!");
     console.log("Handler: After res.send() before next()")
-    next(); 
+    next();
     console.log("Handler: After res.send() and after next()")
 })
 // ----------------------------------------------------------------------------------------
 
 // -----------------------Scenario 08-------------------------------------------------
-app.use('/url7', 
+app.use('/url7',
     (req, res, next) => {
-        console.log('Handler 1'); 
-        next(); 
+        console.log('Handler 1');
+        next();
         console.log('After Next: Handler 1')
     },
     (req, res, next) => {
-        console.log('Handler 1'); 
-        next(); 
+        console.log('Handler 1');
+        next();
         console.log('After Next: Handler 1')
-        res.send('Response sent by 2nd Handler'); 
+        res.send('Response sent by 2nd Handler');
     },
     (req, res, next) => {
-        console.log('Handler 3'); 
-        next(); 
+        console.log('Handler 3');
+        next();
         console.log('After next: Handler 3')
     }
 )   // res sent but crashed the server due to cannot remove headers wala error
@@ -223,13 +223,119 @@ app.use('/url7',
 
 //--------------------------------------Scenario 09---------------------------------------
 // creating authMiddleware file as well as admin file for route handling related to admin API. 
-const {admin: adminAuthMiddlware} = require('./middlewares/authMiddleware')
+const { admin: adminAuthMiddlware } = require('./middlewares/authMiddleware')
 app.use('/admin', adminAuthMiddlware)
 
-const {router: adminRouter} = require('./routes/adminRoute')
-app.use('/admin', adminRouter); 
+const { router: adminRouter } = require('./routes/adminRoute')
+app.use('/admin', adminRouter);
 
 // ----------------------------------------------------------------------------------------
+
+// ---------------------Scenario 10 - creating custom error middleware----------------------------
+
+app.use('/url8', (req, res, next) => {
+    console.log("Route Handler");
+    next(new Error("Something went wrong!")); // Pass an error to trigger error middleware
+    console.log("After next: Route Handler 1");
+})
+
+// app.use((err, req, res, next) => {
+//     console.log("custom error middleware called"); 
+//     return res.status(500).send(err.message); 
+// })
+
+// when you'll not create a custom error middleware then express has its own default error middleware
+// that runs when any error is found. 
+
+// And whenever we've to call the error middleware then we've to pass the err as an argument to the
+// next(); 
+
+// that is why it has advised to write your logic in try-catch block. 
+// ---------------------------------------------------------------------------------------------
+
+// -----------------------------------Scenario 11 -(using try-catch)---------------------------
+
+app.use('/url9', (req, res, next) => {
+    let flag = 0;
+
+    try {
+        console.log('Route Handler');
+        flag = 1;
+        if (flag === 1) throw new Error('Flag is 1. It means client is not an admin.')
+        else res.send('Response Sent!!!!!!')
+    } catch (err) {
+        next(err)
+    }
+})
+
+app.use((err, req, res, next) => {
+    console.log("custom error middleware called");
+    return res.status(500).send(err.message);
+})
+// --------------------------------------------------------------------------------------------
+
+
+// ---------------------Scenario 12 - (error middleware using '/' )------------------------
+
+// 2 cases -> error middleware after handler or before handler
+
+// case 2 :- error middleware before handler
+app.use('/', (err, req, res, next) => {
+    console.log("custom error middleware called");
+    return res.status(500).send(err.message);
+})
+
+// routing handler
+app.use('/url10', (req, res, next) => {
+    console.log("Route Handler");
+    next(new Error("Something went wrong!!!!!"));
+    console.log("After next: Route Handler");
+})
+
+// case 1 :- error middleware after handler
+/*
+    app.use('/', (err, req, res, next) => {
+    console.log("custom error middleware called");
+    return res.status(500).send(err.message);
+    })
+*/
+
+// basically error handler before the route handler makes no sense at all. Always. 
+
+// check the doc -> namste Node - Season 02 for the explanation. 
+// -----------------------------------------------------------------------------------------
+
+// ---------------------Scenario 13 - using app.use() and app.httpMethods() together----------------
+app.use('/dashboard', (req, res, next) => {
+    console.log('Handler that uses app.use(). Think of it as middleware for dashboard');
+    next();
+    console.log('After next: Handler 1')
+})
+
+app.get('/dashboard', (req, res) => {
+    console.log('Dashboard Home');
+    res.send('Dashboard Home Page.');
+})
+
+app.get('/dashboard/login', (req, res) => {
+    console.log('Login Page');
+    res.send('Login Successful');
+})
+
+app.get('/dashboard/signUp', (req, res) => {
+    console.log('Signup Page');
+    res.send('Please Signup!!!!');
+})
+
+// when /dashboard hits then 1st matching route will be the one that uses app.use(); 
+// it's routing handler will get executed. then next() will be called and then next matching route 
+// will be called. i.e. app.get('/dashboard) 
+
+// lly, when /dashboard/login hits then 1st matching route will be the one that uses app.use();
+// it's routing handler will get executed. then next() will be called and then next matching route 
+// will be called. i.e. app.get('/dashboard/login) 
+// -------------------------------------------------------------------------------------------------
+
 
 app.get('/', (req, res) => res.send('Home route created using HTTP method'))
 

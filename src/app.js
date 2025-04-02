@@ -2,6 +2,13 @@ const express = require('express');
 
 const app = express();
 
+const dotenv = require('dotenv'); 
+
+dotenv.config(); // loads the enivronment variables. 
+
+
+//------------- 🚀🚀🚀🚀🚀🚀 Routing Handlers and middlewares 🚀🚀🚀🚀🚀🚀 ---------------------
+
 // ----------------------------Ep(16 + 17)🚀🚀🚀--------------------------------------------------
 
 // -----------------Scenario 01--------------------------------------------------
@@ -207,9 +214,9 @@ app.use('/url7',
         console.log('After Next: Handler 1')
     },
     (req, res, next) => {
-        console.log('Handler 1');
+        console.log('Handler 2');
         next();
-        console.log('After Next: Handler 1')
+        console.log('After Next: Handler 2')
         res.send('Response sent by 2nd Handler');
     },
     (req, res, next) => {
@@ -336,7 +343,56 @@ app.get('/dashboard/signUp', (req, res) => {
 // will be called. i.e. app.get('/dashboard/login) 
 // -------------------------------------------------------------------------------------------------
 
+// ------------------Ep 18 - (middlewares and error handlers) 🚀🚀🚀------------------------------
+
+
+//------------- 🚀🚀🚀🚀🚀🚀 Routing Handlers and middlewares 🚀🚀🚀🚀🚀🚀 ---------------------
+
+
+// --------------Ep 19 - (Database Schemas & Model, Mongoose) 🚀🚀🚀--------------------------------
+
+const { connectDB } = require('./config/database')
+
+connectDB().then(() => {
+    console.log('Database connected successfully!!!!')
+
+    app.listen(3000, () => console.log("Server listening at Port 3000"))
+})
+    .catch((err) => {
+        console.log('Database connection Failed!!!!!')
+    })
+
+
+// creating new collection and filling the data by calling the inserUser() manually -> BAD WAY❌❌
+require('./model/user')
+
+
+// Inserting Data to the DB by creating APIs
+const {dummyModel: Dummy} = require('./model/dummy'); 
+
+app.post('/dummySignup', async (req, res, next) => {
+
+    const dataObj = {
+        firstName:"Rupam",
+        lastName:"Pakhira",
+        age:23,
+        hobby:"GAY"
+    }
+    const newData = new Dummy(dataObj);  // creating an instance of Dummy Model i.e. document
+
+    try{
+        await newData.save();  // saving the data into dummy collection
+        console.log('dummy data added successfully')
+        res.send(JSON.stringify(dataObj))
+    }
+    catch(e) {
+        next(e); 
+    }
+})
+
+// --------------Ep 19 - (Database Schemas & Model, Mongoose) 🚀🚀🚀--------------------------------
+
+
+// --------------------------------------------------------------------------------------------------
 
 app.get('/', (req, res) => res.send('Home route created using HTTP method'))
-
-app.listen(3000, () => console.log("Server listening at Port 3000"))

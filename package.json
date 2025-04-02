@@ -1,15 +1,16 @@
 {
   "dependencies": {
-    "express": "^4.21.2"
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.12.1"
   },
   "name": "namaste-node-js",
   "description": "**Season 01 :** https://sharing.clickup.com/9016746256/t/h/86cxwm73x/Z5CESIKBL2NWCEM",
   "version": "1.0.0",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
-    "start":"node src/app.js",
-    "dev":"nodemon src/app.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
   },
   "keywords": [],
   "author": "",

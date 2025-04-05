@@ -359,7 +359,7 @@ connectDB().then(() => {
     app.listen(3000, () => console.log("Server listening at Port 3000"))
 })
     .catch((err) => {
-        console.log('Database connection Failed!!!!!')
+        console.log(`Database connection Failed!!!!!. ${err}`)
     })
 
 
@@ -400,37 +400,77 @@ app.post('/dummySignup', async (req, res, next) => {
 // Case 02 --> Saving the dynamic data into DB via APIs. sending data via req.body. 
 const { dummy2Model: Dummy2 } = require('./model/dummy2')
 
-app.use(express.json()); 
+app.use(express.json());
 // global middleware -> applied to all the API endpoints that we'll create after this line. 
 
-app.post('/dummy2Signup', async(req, res, next) => {
+app.post('/dummy2Signup', async (req, res, next) => {
 
     console.log(req.body); // it'll give me the entire obj. 
 
-    const { firstName, lastName, email, password } = req.body; 
+    const { firstName, lastName, email, password } = req.body;
     // since we're getting the data in the form of JSON. Hence, we've to add a middleware named as
     //  app.use(express.json()) that basically attaches the incoming JSON with req.body
     // without this middleware, req.body will remain undefined. 
 
     const dataObj = {
-        firstName, 
-        lastName, 
-        email, 
+        firstName,
+        lastName,
+        email,
         password
     }
 
     const newData = new Dummy2(dataObj);  // instance of model --> document
 
-// Instead of destructuring and creating dataObj, 
-// we can literally pass enitre req.body while creating a new instance. cuz, 🌟 req.body === dataObj.🌟 
+    // Instead of destructuring and creating dataObj, 
+    // we can literally pass enitre req.body while creating a new instance. cuz, 🌟 req.body === dataObj.🌟 
 
     try {
-        await newData?.save(); 
-        res.status(200).send(JSON?.stringify(dataObj)); 
-        console.log('Data added successfully'); 
+        await newData?.save();
+        res.status(200).send(JSON?.stringify(dataObj));
+        console.log('Data added successfully');
     } catch (error) {
         console.log('Error occured')
-        next(error); 
+        next(error);
+    }
+})
+
+
+
+// ****************** Scenario - 02 -> (getting the data from the db) *************************
+
+// for the login -> logic -> if user exists and if password matches then simply log in. 
+// In this case we'll show the res as 200. 
+// if user exists but password is wrong then wrong password. 
+// if user not then send 404 with msg as user not found. create account first. 
+app.get('/dummy2Login', async (req, res, next) => {
+    console.log(req?.query)
+
+    const { email, password } = req.query;
+
+    try {
+        const ifExists = await Dummy2?.findOne({ email }); // returns document (or, obj) if exists
+                                                            //  else undefined 
+
+        // user Exists
+        if (ifExists) {
+
+            // password matches
+            if (password === ifExists?.password) {
+                res.status(200).send(JSON.stringify(ifExists));
+                console.log('Logged in successfully.')
+            }
+            else {
+                res.status(401).send('Incorrect Password.');
+                console.log('Incorect Password. Login failed');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Create account first');
+            console.log('Login failed. Create account first')
+        }
+    }
+    catch (error) {
+        next(e); // default error middleware will get called if no custom middleware exists. 
     }
 })
 

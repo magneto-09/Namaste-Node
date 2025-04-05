@@ -2,7 +2,7 @@ const express = require('express');
 
 const app = express();
 
-const dotenv = require('dotenv'); 
+const dotenv = require('dotenv');
 
 dotenv.config(); // loads the enivronment variables. 
 
@@ -367,30 +367,74 @@ connectDB().then(() => {
 require('./model/user')
 
 
-// Inserting Data to the DB by creating APIs
-const {dummyModel: Dummy} = require('./model/dummy'); 
+// Inserting Data to the DB by creating APIs 
+const { dummyModel: Dummy } = require('./model/dummy');
 
+// Case 01 --> Sending the hardcode data (or, static data) to db via APIs
 app.post('/dummySignup', async (req, res, next) => {
 
     const dataObj = {
-        firstName:"Rupam",
-        lastName:"Pakhira",
-        age:23,
-        hobby:"GAY"
+        firstName: "Rupam",
+        lastName: "Pakhira",
+        age: 23,
+        hobby: "GAY"
     }
     const newData = new Dummy(dataObj);  // creating an instance of Dummy Model i.e. document
 
-    try{
-        await newData.save();  // saving the data into dummy collection
+    try {
+        await newData?.save();  // saving the data into dummy collection
         console.log('dummy data added successfully')
-        res.send(JSON.stringify(dataObj))
+        res.send(JSON?.stringify(dataObj))
     }
-    catch(e) {
-        next(e); 
+    catch (e) {
+        next(e);
     }
 })
 
 // --------------Ep 19 - (Database Schemas & Model, Mongoose) 🚀🚀🚀--------------------------------
+
+
+
+// --------------Ep 20 - (Diving into the APIs) 🚀🚀🚀--------------------------------
+
+// Case 02 --> Saving the dynamic data into DB via APIs. sending data via req.body. 
+const { dummy2Model: Dummy2 } = require('./model/dummy2')
+
+app.use(express.json()); 
+// global middleware -> applied to all the API endpoints that we'll create after this line. 
+
+app.post('/dummy2Signup', async(req, res, next) => {
+
+    console.log(req.body); // it'll give me the entire obj. 
+
+    const { firstName, lastName, email, password } = req.body; 
+    // since we're getting the data in the form of JSON. Hence, we've to add a middleware named as
+    //  app.use(express.json()) that basically attaches the incoming JSON with req.body
+    // without this middleware, req.body will remain undefined. 
+
+    const dataObj = {
+        firstName, 
+        lastName, 
+        email, 
+        password
+    }
+
+    const newData = new Dummy2(dataObj);  // instance of model --> document
+
+// Instead of destructuring and creating dataObj, 
+// we can literally pass enitre req.body while creating a new instance. cuz, 🌟 req.body === dataObj.🌟 
+
+    try {
+        await newData?.save(); 
+        res.status(200).send(JSON?.stringify(dataObj)); 
+        console.log('Data added successfully'); 
+    } catch (error) {
+        console.log('Error occured')
+        next(error); 
+    }
+})
+
+// --------------Ep 20 - (Diving into the APIs) 🚀🚀🚀--------------------------------
 
 
 // --------------------------------------------------------------------------------------------------

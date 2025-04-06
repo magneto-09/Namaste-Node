@@ -359,9 +359,11 @@ connectDB().then(() => {
     app.listen(3000, () => console.log("Server listening at Port 3000"))
 })
     .catch((err) => {
-        console.log('Database connection Failed!!!!!')
+        console.log(`Database connection Failed!!!!!. ${err}`)
     })
 
+
+// ***************** Scenario 01 --> (Posting the data into DB) *******************************
 
 // creating new collection and filling the data by calling the inserUser() manually -> BAD WAY❌❌
 require('./model/user')
@@ -400,39 +402,189 @@ app.post('/dummySignup', async (req, res, next) => {
 // Case 02 --> Saving the dynamic data into DB via APIs. sending data via req.body. 
 const { dummy2Model: Dummy2 } = require('./model/dummy2')
 
-app.use(express.json()); 
+app.use(express.json());
 // global middleware -> applied to all the API endpoints that we'll create after this line. 
 
-app.post('/dummy2Signup', async(req, res, next) => {
+app.post('/dummy2Signup', async (req, res, next) => {
 
     console.log(req.body); // it'll give me the entire obj. 
 
-    const { firstName, lastName, email, password } = req.body; 
+    const { firstName, lastName, email, password } = req.body;
     // since we're getting the data in the form of JSON. Hence, we've to add a middleware named as
     //  app.use(express.json()) that basically attaches the incoming JSON with req.body
     // without this middleware, req.body will remain undefined. 
 
     const dataObj = {
-        firstName, 
-        lastName, 
-        email, 
+        firstName,
+        lastName,
+        email,
         password
     }
 
     const newData = new Dummy2(dataObj);  // instance of model --> document
 
-// Instead of destructuring and creating dataObj, 
-// we can literally pass enitre req.body while creating a new instance. cuz, 🌟 req.body === dataObj.🌟 
+    // Instead of destructuring and creating dataObj, 
+    // we can literally pass enitre req.body while creating a new instance. cuz, 🌟 req.body === dataObj.🌟 
 
     try {
-        await newData?.save(); 
-        res.status(200).send(JSON?.stringify(dataObj)); 
-        console.log('Data added successfully'); 
+        await newData?.save();
+        res.status(200).send(JSON?.stringify(dataObj));
+        console.log('Data added successfully');
     } catch (error) {
         console.log('Error occured')
-        next(error); 
+        next(error);
     }
 })
+
+
+
+// ****************** Scenario - 02 -> (getting the data from the DB) *************************
+
+// for the login -> logic -> if user exists and if password matches then simply log in. 
+// In this case we'll show the res as 200. 
+// if user exists but password is wrong then wrong password. 
+// if user not then send 404 with msg as user not found. create account first. 
+app.get('/dummy2Login', async (req, res, next) => {
+    console.log(req?.query)
+
+    const { email, password } = req.query;
+
+    try {
+        const ifExists = await Dummy2?.findOne({ email }); // returns document (or, obj) if exists
+        //  else undefined 
+
+        // user Exists
+        if (ifExists) {
+
+            // password matches
+            if (password === ifExists?.password) {
+                res.status(200).send(JSON.stringify(ifExists));
+                console.log('Logged in successfully.')
+            }
+            else {
+                res.status(401).send('Incorrect Password.');
+                console.log('Incorect Password. Login failed');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Create account first');
+            console.log('Login failed. Create account first')
+        }
+    }
+    catch (error) {
+        next(e); // default error middleware will get called if no custom middleware exists. 
+    }
+})
+// ********************************************************************************************
+
+
+// *********** Scenario 03 --> (Updating the data in the DB) *************************
+
+// 2 ways :-🌟🌟 PUT or PATCH 🌟🌟
+
+// Case 01 --> 
+// Update passowrd -> logic -> check if user exists and curr password matches. then change the passowrd
+// This is different than forget password. 
+app.put('/dummy2PutUpdate', async (req, res, next) => {
+    const { email, currPassword, newPassword } = req.body;
+
+    try {
+        const ifExists = await Dummy2.findOne({ email }); // returns a document if exists. 
+
+        if (ifExists) {
+            // match the current password
+            if (currPassword === ifExists.password) {
+                await Dummy2.updateOne({ email }, { password: newPassword });
+                // Find the first document in Dummy2 where email matches, 
+                // and replaces the current document with password field only. WRONG ❌❌❌❌
+                // It'll update the password field only 🚀🚀🚀
+                res.status(200).send('Data updated successfully');
+                console.log('Using PUT. so replaced the prev data stored in DB')
+            }
+            else {
+                res.status(401).send('current password is wrong');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Can\'t change the password');
+        }
+
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+
+    //    🌟🌟 RAY OF HOPE🌟🌟
+    // We've used PUT and we were expecting that prev. data will be replaced. But handler has updated
+    // the Password field only. 
+
+    // Reason --> 
+    // 1 --> Mongoose doesn't care what type of HTTP method we're using. what'll happen in DB is totally
+    //       dependent on what mongoose Model JS functions we're using. 
+
+    // 2 --> Mongoose doesn't care about HTTP methods cuz HTTP methods are at network layer and 
+    //       mongoose model JS funcitons works at data layer. (both layer -> completely isolated)
+    //       And, there is no mapping b/w these 2 layers. 
+    //       Check the DOC of REST Conventions v/s Mongoose Model JS functions; 🚀🚀🚀🚀🚀
+    //       Acc. to Convention, to justify PUT use replaceOne() instead of updateOne()
+
+})
+
+
+// Case 02 --> 
+// Update data in the DB using PATCH. 
+// Acc. to Convention, to justify PATCH we've used updateOne() 🚀🚀🚀
+app.patch('/dummy2PatchUpdate', async (req, res, next) => {
+    const { email, currPassword, newPassword } = req.body;
+
+    try {
+        const ifExists = await Dummy2.findOne({ email }); // returns a document if exists. 
+
+        if (ifExists) {
+            // match the current password
+            if (currPassword === ifExists.password) {
+                await Dummy2.updateOne({ email }, { password: newPassword }); // update the password
+
+                res.status(200).send('Data updated successfully');
+                console.log('partial update successful')
+            }
+            else {
+                res.status(401).send('current password is wrong');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Can\'t change the password');
+        }
+
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+})
+
+// ********************************************************************************************
+
+
+// ******** Scenario 04 - (Deleting the data in DB) *************************************
+
+// logic -> to delete the document (or, record) we need the data from uniue field. 
+// In our case, email is the unique field. 
+app.delete('/dummy2Delete', async(req, res, next) => {
+    const {email} = req.query;  // commonly used with DELETE
+
+    // there is no need to check if user exists or not for DROP op. 
+    // If exists, document will be deleted. 
+    // If not then op. will be trivial. 
+
+    try {
+        await Dummy2.deleteOne({email}); 
+        console.log('Data deleted succefully'); 
+        res.status(200).send('Document dropped!!!!!')
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+})
+
+// ********************************************************************************************
+
 
 // --------------Ep 20 - (Diving into the APIs) 🚀🚀🚀--------------------------------
 

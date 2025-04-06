@@ -363,6 +363,8 @@ connectDB().then(() => {
     })
 
 
+// ***************** Scenario 01 --> (Posting the data into DB) *******************************
+
 // creating new collection and filling the data by calling the inserUser() manually -> BAD WAY❌❌
 require('./model/user')
 
@@ -436,7 +438,7 @@ app.post('/dummy2Signup', async (req, res, next) => {
 
 
 
-// ****************** Scenario - 02 -> (getting the data from the db) *************************
+// ****************** Scenario - 02 -> (getting the data from the DB) *************************
 
 // for the login -> logic -> if user exists and if password matches then simply log in. 
 // In this case we'll show the res as 200. 
@@ -449,7 +451,7 @@ app.get('/dummy2Login', async (req, res, next) => {
 
     try {
         const ifExists = await Dummy2?.findOne({ email }); // returns document (or, obj) if exists
-                                                            //  else undefined 
+        //  else undefined 
 
         // user Exists
         if (ifExists) {
@@ -473,6 +475,116 @@ app.get('/dummy2Login', async (req, res, next) => {
         next(e); // default error middleware will get called if no custom middleware exists. 
     }
 })
+// ********************************************************************************************
+
+
+// *********** Scenario 03 --> (Updating the data in the DB) *************************
+
+// 2 ways :-🌟🌟 PUT or PATCH 🌟🌟
+
+// Case 01 --> 
+// Update passowrd -> logic -> check if user exists and curr password matches. then change the passowrd
+// This is different than forget password. 
+app.put('/dummy2PutUpdate', async (req, res, next) => {
+    const { email, currPassword, newPassword } = req.body;
+
+    try {
+        const ifExists = await Dummy2.findOne({ email }); // returns a document if exists. 
+
+        if (ifExists) {
+            // match the current password
+            if (currPassword === ifExists.password) {
+                await Dummy2.updateOne({ email }, { password: newPassword });
+                // Find the first document in Dummy2 where email matches, 
+                // and replaces the current document with password field only. WRONG ❌❌❌❌
+                // It'll update the password field only 🚀🚀🚀
+                res.status(200).send('Data updated successfully');
+                console.log('Using PUT. so replaced the prev data stored in DB')
+            }
+            else {
+                res.status(401).send('current password is wrong');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Can\'t change the password');
+        }
+
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+
+    //    🌟🌟 RAY OF HOPE🌟🌟
+    // We've used PUT and we were expecting that prev. data will be replaced. But handler has updated
+    // the Password field only. 
+
+    // Reason --> 
+    // 1 --> Mongoose doesn't care what type of HTTP method we're using. what'll happen in DB is totally
+    //       dependent on what mongoose Model JS functions we're using. 
+
+    // 2 --> Mongoose doesn't care about HTTP methods cuz HTTP methods are at network layer and 
+    //       mongoose model JS funcitons works at data layer. (both layer -> completely isolated)
+    //       And, there is no mapping b/w these 2 layers. 
+    //       Check the DOC of REST Conventions v/s Mongoose Model JS functions; 🚀🚀🚀🚀🚀
+    //       Acc. to Convention, to justify PUT use replaceOne() instead of updateOne()
+
+})
+
+
+// Case 02 --> 
+// Update data in the DB using PATCH. 
+// Acc. to Convention, to justify PATCH we've used updateOne() 🚀🚀🚀
+app.patch('/dummy2PatchUpdate', async (req, res, next) => {
+    const { email, currPassword, newPassword } = req.body;
+
+    try {
+        const ifExists = await Dummy2.findOne({ email }); // returns a document if exists. 
+
+        if (ifExists) {
+            // match the current password
+            if (currPassword === ifExists.password) {
+                await Dummy2.updateOne({ email }, { password: newPassword }); // update the password
+
+                res.status(200).send('Data updated successfully');
+                console.log('partial update successful')
+            }
+            else {
+                res.status(401).send('current password is wrong');
+            }
+        }
+        else {
+            res.status(404).send('User not found. Can\'t change the password');
+        }
+
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+})
+
+// ********************************************************************************************
+
+
+// ******** Scenario 04 - (Deleting the data in DB) *************************************
+
+// logic -> to delete the document (or, record) we need the data from uniue field. 
+// In our case, email is the unique field. 
+app.delete('/dummy2Delete', async(req, res, next) => {
+    const {email} = req.query;  // commonly used with DELETE
+
+    // there is no need to check if user exists or not for DROP op. 
+    // If exists, document will be deleted. 
+    // If not then op. will be trivial. 
+
+    try {
+        await Dummy2.deleteOne({email}); 
+        console.log('Data deleted succefully'); 
+        res.status(200).send('Document dropped!!!!!')
+    } catch (error) {
+        next(error); // default error middleware. 
+    }
+})
+
+// ********************************************************************************************
+
 
 // --------------Ep 20 - (Diving into the APIs) 🚀🚀🚀--------------------------------
 

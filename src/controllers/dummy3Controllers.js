@@ -38,19 +38,10 @@ const updateProfileController = async (req, res, next) => {
         email,
       });
     } else {
-      const {
-        age: updatedAge,
-        firstName: updatedFirstName,
-        email: updatedEmail,
-      } = req?.body; // Intentionally sending BAD DATA
-
-      const op = await Dummy3.updateOne(
-        { email },
-        { age: updatedAge, firstName: updatedFirstName, email: updatedEmail },
-        {
-          runValidators: true, // this'll make sure to run validation and sanitization checks.
-        }
-      );
+      const updatedData = req?.body; // Intentionally sending BAD DATA
+      const op = await Dummy3.updateOne({ email }, updatedData, {
+        runValidators: true, // this'll make sure to run validation and sanitization checks at DB lvl.
+      });
 
       console.log("Data updated!!!!!!!");
       res.status(200).json({

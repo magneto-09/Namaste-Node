@@ -58,6 +58,8 @@ const dummy3Schema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      minLength:[8, 'Min. length required is 8. Received {VALUE}'],
+      maxLength:[30, 'Max. allowed length is 50. Received {VALUE}']
     },
   },
   {

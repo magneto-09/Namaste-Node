@@ -2,7 +2,8 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.12.1"
+    "mongoose": "^8.12.1",
+    "validator": "^13.15.0"
   },
   "name": "namaste-node-js",
   "description": "**Season 01 :** https://sharing.clickup.com/9016746256/t/h/86cxwm73x/Z5CESIKBL2NWCEM",

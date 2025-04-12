@@ -3,6 +3,7 @@ const express = require("express");
 const {
   signupController: dummy3SignupController,
   updateProfileController: dummy3UpdateProfileController,
+  updateProfileController1: dummy3UpdateProfileController1,
 } = require("../controllers/dummy3Controllers");
 
 const router = express.Router(); // router instance
@@ -17,6 +18,7 @@ router.get("/", (_, res) => {
 // /signup -> POST
 router.post("/signup", dummy3SignupController);
 
+// **************** With DB level Validations only. 🚀🚀🚀🚀 *************************************
 // /profile --> update --> PATCH --> running validation and sanitization check using runValidators
 router.patch("/profile/:email", dummy3UpdateProfileController); // dynamic route.
 // we as a developer know that email should be passed in wildcard. but express doesn't care unless
@@ -25,6 +27,13 @@ router.patch("/profile/:email", dummy3UpdateProfileController); // dynamic route
 // you're restricting it.
 // apply regex & manual checking both as well to make sure it is full secured.
 // skipping regex as of now.
+// ************************************************************************************************
+
+// ************* With API and DB level checks. Maximum validation & sanitization. 🚀🚀🚀🚀*******
+
+router.patch("/profile1/:email", dummy3UpdateProfileController1);
+
+// ************************************************************************************************
 
 module.exports = {
   router,

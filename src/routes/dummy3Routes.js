@@ -7,8 +7,14 @@ const {
   loginController: dummy3LoginController,
   getCookieController: dummy3GetCookieController,
   loginController1: dummy3LoginController1,
-  getProfileController: dummy3GetProfileController
+  getProfileController: dummy3GetProfileController,
+  getProfileController1: dummy3GetProfileController1,
+  // 2 way token strategy
+  loginController2: dummy3LoginController2,
+  refreshAccessTokenController: dummy3RefreshAccessTokenController,
+  getProfileController2: dummy3GetProfileController2,
 } = require("../controllers/dummy3Controllers");
+const { jwtAuth, jwtAuth1 } = require("../middlewares/jwtAuthMiddleware");
 
 const router = express.Router(); // router instance
 
@@ -50,6 +56,17 @@ router.get("/getCookie", dummy3GetCookieController); // dummy API to get the coo
 router.post("/login1", dummy3LoginController1);
 
 router.get("/profile", dummy3GetProfileController);
+
+// separate the logic of extracting token, verify it, extract _id from payload and get the user from _id
+// into a separate auth middleware.🌟🌟
+router.get("/profile1", jwtAuth, dummy3GetProfileController1);
+
+// ----------- Two way Token Strategy 🚀🚀🚀 ------------------------------------------------------
+router.post("/login2", dummy3LoginController2);
+
+router.get("/refreshAccessToken", dummy3RefreshAccessTokenController); // to generate new access token
+
+router.get("/profile2", jwtAuth1, dummy3GetProfileController2);
 
 // --------------------------------------------------------------------------------------------------
 

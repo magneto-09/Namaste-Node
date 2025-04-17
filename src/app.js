@@ -1,8 +1,16 @@
 const express = require("express");
+const dotenv = require("dotenv");
 
 const app = express();
 
-const dotenv = require("dotenv");
+// Namaste Node S02 - Ep 20 - (Diving into the APIs)
+app.use(express.json()); // parse incoming raw json into JS object & attached to req.body🌟🌟🌟
+// Namaste Node S02 - Ep 20 - (Diving into the APIs)
+
+// Namaste Node S02 - EP -23 (Authetication, JWT, Cookies)
+const cookieParser = require("cookie-parser");
+app.use(cookieParser()); // to read the cookies via req.cookies🌟🌟🌟
+// Namaste Node S02 - EP -23 (Authetication, JWT, Cookies)
 
 dotenv.config(); // loads the enivronment variables.
 
@@ -398,8 +406,8 @@ app.post("/dummySignup", async (req, res, next) => {
 // Case 02 --> Saving the dynamic data into DB via APIs. sending data via req.body.
 const { dummy2Model: Dummy2 } = require("./models/dummy2");
 
-app.use(express.json());
-// global middleware -> applied to all the API endpoints that we'll create after this line.
+// express.json() --> global middleware -> applied to all the API endpoints
+// that we'll create after this line.
 
 app.post("/dummy2Signup", async (req, res, next) => {
   console.log(req.body); // it'll give me the entire obj.
@@ -463,6 +471,9 @@ app.get("/dummy2Login", async (req, res, next) => {
   } catch (error) {
     next(e); // default error middleware will get called if no custom middleware exists.
   }
+
+  // /login always be created using POST, but here I used GET to just explain that with GET we
+  // don't send the data using req.body.
 });
 // ********************************************************************************************
 
@@ -574,6 +585,27 @@ app.use("/dummy3", dummy3Router); // dummy3 -> base path. Routes defined in dumm
 //  this /dummy3
 
 // --------------Ep 21 - (Data Sanitization & Validations) 🚀🚀🚀--------------------------------
+
+// ------------ Ep 22 - (Encrypting our Password) 🚀🚀🚀 -----------------------------------
+/*
+    - bcrypt npm package is used. 
+    - 2 major functions:- 
+      -- bcrypt.hash() --> to generate a hashed password
+      -- bcrypt.compare() --> to compare the stored hashed password with received passoword. 
+      -- Both returns a promise. 
+
+  */
+// ------------ Ep 22 - (Encrypting our Password) 🚀🚀🚀 -----------------------------------
+
+// ------------ Ep 23 - (Authentication, JWT, cookies) 🚀🚀🚀 -----------------------------------
+
+// 🚀🚀 cookie-parser --> npm package. 🚀🚀
+// 🌟🌟🌟🌟 cookie-parser :- Parse Cookie header and populate req.cookies with an object
+// keyed by the cookie names.
+
+// 🚩🚩🚩 check the dummy3Routes for this episode. 🚩🚩🚩
+
+// ------------ Ep 23 - (Authentication, JWT, cookies) 🚀🚀🚀 -----------------------------------
 
 // --------------------------------------------------------------------------------------------------
 

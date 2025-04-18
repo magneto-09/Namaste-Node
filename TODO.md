@@ -1,28 +1,67 @@
 # Related to Namaste Node S02 - Ep 10 - Authentication, Cookies and JWT. 🚀🚀🚀
 
-## TODO - 2 Token Strategy (Access Token + Refresh Token)
+# `TODO` - Access + Refresh Token Strategy (2-Token Authentication Flow) 🔐
 
-**01 - Upon logout we're clearing our authCookie that contains refreshToken.**
-But clearing authCookie doesn't ensure the expiry of refreshToken.
-We're still dependant on refreshToken natural `expiresIn` time.
 
-What if an attacker get this refreshToken and he generates a new access token for himself.
-Although not possible cuz requires REFRESH_TOKEN_JWT_SECRET to verify the stolen refreshToken.
+## ✅ 01. Logging Out: Why Just Clearing the Cookie Is Not Enough?
 
-But What if????
-We've to implement something that blocks this token once logged out.
-Soln. -> Save the token in DB or redis.
-         And when logging out so before clearing the cookies remove the token from DB.
+> **Problem:** When a user logs out, we clear the `authCookie` (which contains the `refreshToken`).  
+> But this **doesn't invalidate the token itself** — it's still valid until it naturally expires.
 
-         By this, when generating a new access token we've to check if this refreshToken exists or
-         not.
-         Also, when refreshToken expires naturally so we've to remove this as well from DB.
+### ❗ What If an Attacker Steals the Refresh Token?
+- They could use it to **generate a new access token**, impersonating the user.
+- Although this requires the **`REFRESH_TOKEN_JWT_SECRET`**, which is *not exposed* — it's *still a risk*.
 
-**02 - Axios Interceptor to generate new access token automatically in the FE Side**
--> Axios interceptor to attach all the req with access token that will be passed as bearer in
-req. authorization's headers.
+### ✅ Recommended Solution: Token Blacklisting
+**Store refresh tokens in DB or Redis** at the time of login:
+- When a user logs out:
+  - Delete the refresh token from DB/Redis before clearing the cookie.
+- When issuing a new access token:
+  - Check if the refresh token exists in the DB.
+- When a refresh token expires naturally:
+  - Periodically clean expired tokens from DB/Redis (optional optimization).
 
--> Axios interceptor to call the API that generates access token automatically.
+This ensures **manual and automatic invalidation** of tokens, providing **complete control**.
 
-**03 - Sending refreshToken by setting httpOnly:true in res.cookie does not guarantee prevention from `CSRF` (Cross-Site Request Forgery) Attack**  
- -> Something related to path, sameStrict options of res.cookie + CSRF Token passed manually from FE Side.
+---
+
+## 🔄 02. Axios Interceptors on the Frontend
+
+### ✅ Axios Setup: Automate Token Handling
+1. **Attach Access Token** to all API requests.
+2. **Handle Expired Access Token Automatically**:
+   - Detect `401 Unauthorized` errors.
+   - Call refresh token endpoint (sent via `httpOnly` cookie).
+   - Retry the original failed request.
+
+This ensures a **seamless experience** where tokens refresh automatically in the background.
+
+---
+
+## 🛡️ 03. CSRF: Why `httpOnly` Cookie Isn't Enough
+
+> **Myth:** Using `httpOnly: true` prevents CSRF.  
+> **Reality:** It only prevents JavaScript from accessing the cookie — not CSRF itself.
+
+### ✅ CSRF Protection Strategy
+When using `httpOnly` cookies:
+- **Set Proper Cookie Attributes**:
+  - `httpOnly: true`
+  - `secure: true` *(in production)*
+  - `sameSite: 'Strict'` or `'Lax'` to reduce CSRF risk
+  - `path: '/refresh-token'` to scope the cookie to a specific route
+
+- **Use Additional CSRF Token**:
+  - Server generates a CSRF token and sends it to the client (in a separate cookie or body).
+  - Client sends it back in headers (e.g., `x-csrf-token`) with each request.
+  - Server validates the token to ensure the request came from a trusted origin.
+
+---
+
+## 🚀 Summary
+
+| Feature                       | Implemented Via                             |
+|------------------------------|---------------------------------------------|
+| Invalidate Refresh on Logout | Delete from DB/Redis                        |
+| Auto Access Token Refresh    | Axios Interceptors                          |
+| CSRF Protection              | `sameSite`, `httpOnly`, + CSRF Token header |
